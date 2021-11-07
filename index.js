@@ -16,6 +16,17 @@ async function connectToDatabase() {
 		await client.connect();
 		const database = client.db('doctorsPortal');
 		const appointmentsCollection = database.collection('appoinments');
+		// get all appointments
+		app.get('/appointments', async (req, res) => {
+			const email = req.query.email;
+			console.log(new Date(req.query.date).toLocaleDateString());
+			const date = new Date(req.query.date).toLocaleDateString();
+			console.log(date);
+			const query = { patientEmail: email, date: date };
+			const cursor = appointmentsCollection.find(query);
+			const appointments = await cursor.toArray();
+			res.json(appointments);
+		});
 		// create a new appointment
 		app.post('/appointments', async (req, res) => {
 			try {
