@@ -14,10 +14,18 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function connectToDatabase() {
 	try {
 		await client.connect();
-
-		const database = client.db('doctorPortal');
-		const serviceCollection = database.collection('service');
-		console.log('Connected to database');
+		const database = client.db('doctorsPortal');
+		const appointmentsCollection = database.collection('appoinments');
+		// create a new appointment
+		app.post('/appointments', async (req, res) => {
+			try {
+				const appointment = req.body;
+				const result = await appointmentsCollection.insertOne(appointment);
+				res.json(result);
+			} catch (error) {
+				res.status(500).send(error);
+			}
+		});
 	} finally {
 		// Ensures that the client will close when you finish/error
 		// await client.close();
