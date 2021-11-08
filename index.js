@@ -16,12 +16,13 @@ async function connectToDatabase() {
 		await client.connect();
 		const database = client.db('doctorsPortal');
 		const appointmentsCollection = database.collection('appoinments');
+		const usersCollection = database.collection('users');
 		// get all appointments
 		app.get('/appointments', async (req, res) => {
 			const email = req.query.email;
-			console.log(new Date(req.query.date).toLocaleDateString());
-			const date = new Date(req.query.date).toLocaleDateString();
-			console.log(date);
+			// console.log(new Date(req.query.date).toLocaleDateString());
+			const date = new Date(req.query.date).toLocaleDateString('en-US', { timeZone: 'UTC' });
+			// console.log(date);
 			const query = { patientEmail: email, date: date };
 			const cursor = appointmentsCollection.find(query);
 			const appointments = await cursor.toArray();
@@ -32,6 +33,29 @@ async function connectToDatabase() {
 			try {
 				const appointment = req.body;
 				const result = await appointmentsCollection.insertOne(appointment);
+				res.json(result);
+			} catch (error) {
+				res.status(500).send(error);
+			}
+		});
+		// save user data
+		app.post('/users', async (req, res) => {
+			try {
+				const user = req.body;
+				const result = await usersCollection.insertOne(user);
+				res.json(result);
+			} catch (error) {
+				res.status(500).send(error);
+			}
+		});
+		// update user data
+		app.put('/users', async (req, res) => {
+			try {
+				const user = req.body;
+				const filter = { email: user.email };
+				const options = { upsert: true };
+				const updateDoc = { $set: user };
+				const result = await usersCollection.updateOne(filter, updateDoc, options);
 				res.json(result);
 			} catch (error) {
 				res.status(500).send(error);
