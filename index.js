@@ -61,6 +61,27 @@ async function connectToDatabase() {
 				res.status(500).send(error);
 			}
 		});
+		// add an admin to db
+		app.put('/users/admin', async (req, res) => {
+			const user = req.body;
+			const filter = { email: user.email };
+			const updateDoc = { $set: { isAdmin: true } };
+			const result = await usersCollection.updateOne(filter, updateDoc);
+			res.json(result);
+		});
+		// confirm an admin
+		app.get('/users/:email', async (req, res) => {
+			const email = req.params.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			if (user?.isAdmin) {
+				user.isAdmin = true;
+				res.json(user);
+			} else {
+				user.isAdmin = false;
+				res.json(user);
+			}
+		});
 	} finally {
 		// Ensures that the client will close when you finish/error
 		// await client.close();
