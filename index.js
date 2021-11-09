@@ -6,7 +6,7 @@ const { MongoClient } = require('mongodb');
 const admin = require("firebase-admin");
 const port = process.env.PORT || 5000;
 // firebase admin
-const serviceAccount = require('./doctor-portal-cs-firebase-admin.json');
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
@@ -102,11 +102,14 @@ async function connectToDatabase() {
 		// confirm an admin
 		app.get('/users/:email', async (req, res) => {
 			const email =  req.params.email;
-			if(email == 'undefined') return
-			console.log('Email',email);
+			// console.log('email',email);
+			if(email == 'undefined'){
+				return
+			}	
+			// console.log('Email',email);
 			const query = { email: email };
 			const user = await usersCollection.findOne(query);
-			console.log('user',user);
+			// console.log('user',user);
 			if (user?.isAdmin) {
 				user.isAdmin = true;
 				res.json(user);
