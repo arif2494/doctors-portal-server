@@ -102,14 +102,14 @@ async function connectToDatabase() {
 		// confirm an admin
 		app.get('/users/:email', async (req, res) => {
 			const email =  req.params.email;
-			// console.log('email',email);
 			if(email == 'undefined'){
 				return
 			}	
-			// console.log('Email',email);
 			const query = { email: email };
 			const user = await usersCollection.findOne(query);
-			// console.log('user',user);
+			if(user === null){
+				return
+			}
 			if (user?.isAdmin) {
 				user.isAdmin = true;
 				res.json(user);
