@@ -3,10 +3,31 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const admin = require("firebase-admin");
 const port = process.env.PORT || 5000;
-// middlewear
+// firebase admin
+const serviceAccount = require('./doctor-portal-cs-firebase-admin.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+// middlewears
 app.use(cors());
 app.use(express.json());
+// verify token middlewear
+async function verifyToken  (req, res, next) {
+	if(req?.headers?.authorization?.startsWith('Bearer ')) {
+		const idToken = req.headers.authorization.split('Bearer ')[1];
+		try {
+			const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+			req.decodedEmail = decodedIdToken.email;
+			next();
+		} catch (error) {
+			res.status(401).send('Unauthorized');
+		}
+	}
+
+}
 // mongo db
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env
 	.DB_PASS}@firstcluster.fhu8f.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -62,18 +83,30 @@ async function connectToDatabase() {
 			}
 		});
 		// add an admin to db
-		app.put('/users/admin', async (req, res) => {
-			const user = req.body;
+		app.put('/users/admin',verifyToken, async (req, res) => {
+			const requester = req.decodedEmail
+			if(requester){
+				const requesterData = await usersCollection.findOne({email: requester})
+				if(requesterData.isAdmin){
+	const user = req.body;
 			const filter = { email: user.email };
 			const updateDoc = { $set: { isAdmin: true } };
 			const result = await usersCollection.updateOne(filter, updateDoc);
 			res.json(result);
+				}
+			}else{
+				res.status(403).json({message: "You do not have acccess to it"})
+			}
+		
 		});
 		// confirm an admin
 		app.get('/users/:email', async (req, res) => {
-			const email = req.params.email;
+			const email =  req.params.email;
+			if(email == 'undefined') return
+			console.log('Email',email);
 			const query = { email: email };
 			const user = await usersCollection.findOne(query);
+			console.log('user',user);
 			if (user?.isAdmin) {
 				user.isAdmin = true;
 				res.json(user);
