@@ -127,7 +127,7 @@ connectToDatabase().catch(console.dir);
 
 // routes
 app.get('/', (req, res) => {
-	res.send('server is up');
+	res.send('server is up : doctorsPortal');
 });
 
 app.listen(port, () => {
