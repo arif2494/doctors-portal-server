@@ -3,7 +3,10 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const ObjectID = require('mongodb').ObjectID;
 const admin = require("firebase-admin");
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
+
 const port = process.env.PORT || 5000;
 // firebase admin
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -49,6 +52,13 @@ async function connectToDatabase() {
 			const appointments = await cursor.toArray();
 			res.json(appointments);
 		});
+		// gte appointment by id
+		app.get('/appointments/:id', async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: ObjectID(id) };
+			const appointment = await appointmentsCollection.findOne(query);
+			res.json(appointment);
+		})
 		// create a new appointment
 		app.post('/appointments', async (req, res) => {
 			try {
@@ -118,6 +128,19 @@ async function connectToDatabase() {
 				res.json(user);
 			}
 		});
+
+		// stripe payment intent
+		app.post('/create-payment-intent', async(req, res)=>{
+			const paymentInfo = req.body;
+			const amount = paymentInfo.price * 100;
+			const paymentIntent = await stripe.paymentIntents.create({
+				currency: 'usd',
+				amount: amount,
+				payment_method_types: ['card'],
+
+			})
+			res.json({clientSecret: paymentIntent.client_secret});
+		})
 	} finally {
 		// Ensures that the client will close when you finish/error
 		// await client.close();
